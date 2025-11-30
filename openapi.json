@@ -2,7 +2,7 @@
     "openapi": "3.0.0",
     "info": {
         "title": "Cube Crush API",
-        "version": "1.4.0",
+        "version": "1.5.0",
         "description": "API для мобильной игры Cube Crush"
     },
     "servers": [
@@ -54,7 +54,7 @@
                         }
                     },
                     "400": {
-                        "description": "Ошибка валидации данных",
+                        "description": "Ошибка проверки данных",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -175,7 +175,7 @@
                         }
                     },
                     "400": {
-                        "description": "Ошибка валидации данных",
+                        "description": "Ошибка проверки данных",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -284,7 +284,7 @@
                         "description": "Успешный выход"
                     },
                     "400": {
-                        "description": "Ошибка валидации данных",
+                        "description": "Ошибка проверки данных",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -341,8 +341,8 @@
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Обновить access token",
-                "description": "Обновление access token с использованием refresh token",
+                "summary": "Обновить токен доступа",
+                "description": "Обновление токена доступа с использованием токена обновления",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -374,7 +374,7 @@
                         }
                     },
                     "400": {
-                        "description": "Ошибка валидации данных",
+                        "description": "Ошибка проверки данных",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -538,7 +538,7 @@
                     "Users"
                 ],
                 "summary": "Обновить данные пользователя",
-                "description": "Обновление ника и/или пароля текущего пользователя",
+                "description": "Обновление имени пользователя и/или пароля",
                 "security": [
                     {
                         "bearerAuth": []
@@ -566,7 +566,7 @@
                         }
                     },
                     "400": {
-                        "description": "Ошибка валидации данных",
+                        "description": "Ошибка проверки данных",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -586,7 +586,7 @@
                         }
                     },
                     "409": {
-                        "description": "Пользователь с таким ником уже существует",
+                        "description": "Пользователь с таким именем уже существует",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -694,7 +694,7 @@
                         }
                     },
                     "400": {
-                        "description": "Ошибка валидации данных",
+                        "description": "Ошибка проверки данных",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -751,7 +751,7 @@
                 "tags": [
                     "Game"
                 ],
-                "summary": "Получить таблицу лидеров лучших игроков",
+                "summary": "Получить таблицу лидеров",
                 "responses": {
                     "200": {
                         "description": "Данные таблицы лидеров",
@@ -923,13 +923,13 @@
                         "type": "string",
                         "minLength": 3,
                         "maxLength": 20,
-                        "description": "Новый никнейм пользователя",
+                        "description": "Новое имя пользователя",
                         "example": "NewCubeMaster"
                     },
                     "currentPassword": {
                         "type": "string",
                         "format": "password",
-                        "description": "Текущий пароль (обязателен при смене пароля)",
+                        "description": "Текущий пароль",
                         "example": "securepassword123"
                     },
                     "newPassword": {
@@ -1023,17 +1023,13 @@
                     "averageScore": {
                         "type": "integer",
                         "example": 750
-                    },
-                    "globalRank": {
-                        "type": "integer",
-                        "example": 5
                     }
                 }
             },
             "LeaderboardEntry": {
                 "type": "object",
                 "properties": {
-                    "rank": {
+                    "position": {
                         "type": "integer",
                         "example": 1
                     },
@@ -1076,10 +1072,6 @@
                     "newBestScore": {
                         "type": "boolean",
                         "example": true
-                    },
-                    "globalRank": {
-                        "type": "integer",
-                        "example": 15
                     },
                     "previousBest": {
                         "type": "integer",
