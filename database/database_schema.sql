@@ -4,39 +4,46 @@ CREATE DATABASE cube_crush_game;
 
 -- Основные таблицы
 CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
+    id BIGSERIAL PRIMARY KEY,
     password_hash VARCHAR(255) NOT NULL,
     nickname VARCHAR(100) UNIQUE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS high_scores (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
     score INTEGER NOT NULL CHECK (score >= 0),
     achieved_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS user_sessions (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
     jti VARCHAR(255) UNIQUE NOT NULL,
     refresh_token_hash VARCHAR(255) UNIQUE NOT NULL,
     access_token_hash VARCHAR(255),
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    access_token_expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    refresh_token_expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     is_revoked BOOLEAN DEFAULT FALSE
 );
 
+CREATE TABLE IF NOT EXISTS revoked_tokens (
+    jti VARCHAR(255) PRIMARY KEY,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    revoked_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Индексы для оптимизации
+CREATE INDEX IF NOT EXISTS idx_revoked_tokens_expires ON revoked_tokens(expires_at);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_jti ON user_sessions(jti);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_sessions_expires ON user_sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_access_expires ON user_sessions(access_token_expires_at);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_refresh_expires ON user_sessions(refresh_token_expires_at);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_refresh_token ON user_sessions(refresh_token_hash);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_revoked ON user_sessions(is_revoked) WHERE is_revoked = false;
 
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_nickname ON users(nickname);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
 
