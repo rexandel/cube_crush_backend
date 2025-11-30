@@ -532,13 +532,14 @@
                         }
                     }
                 }
-            },
+            }
+        },
+        "/users/me/nickname": {
             "patch": {
                 "tags": [
                     "Users"
                 ],
-                "summary": "Обновить данные пользователя",
-                "description": "Обновление имени пользователя и/или пароля",
+                "summary": "Сменить имя пользователя",
                 "security": [
                     {
                         "bearerAuth": []
@@ -549,14 +550,25 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/UserUpdateRequest"
+                                "type": "object",
+                                "required": [
+                                    "nickname"
+                                ],
+                                "properties": {
+                                    "nickname": {
+                                        "type": "string",
+                                        "minLength": 3,
+                                        "maxLength": 20,
+                                        "example": "NewCubeMaster"
+                                    }
+                                }
                             }
                         }
                     }
                 },
                 "responses": {
                     "200": {
-                        "description": "Данные пользователя успешно обновлены",
+                        "description": "Имя пользователя успешно изменено",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -596,7 +608,7 @@
                         }
                     },
                     "429": {
-                        "description": "Слишком много попыток обновления. Попробуйте позже.",
+                        "description": "Слишком много попыток смены имени. Попробуйте позже.",
                         "headers": {
                             "Retry-After": {
                                 "schema": {
@@ -609,7 +621,137 @@
                                 "schema": {
                                     "type": "integer",
                                     "description": "Лимит запросов в минуту",
-                                    "example": 5
+                                    "example": 3
+                                }
+                            },
+                            "X-RateLimit-Remaining": {
+                                "schema": {
+                                    "type": "integer",
+                                    "description": "Оставшееся количество запросов",
+                                    "example": 0
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "Ошибка подключения к базе данных или внешним сервисам",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Сервис временно недоступен",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/password": {
+            "patch": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Сменить пароль",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "currentPassword",
+                                    "newPassword"
+                                ],
+                                "properties": {
+                                    "currentPassword": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "description": "Текущий пароль",
+                                        "example": "securepassword123"
+                                    },
+                                    "newPassword": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 6,
+                                        "description": "Новый пароль",
+                                        "example": "newsecurepassword456"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Пароль успешно изменен"
+                    },
+                    "400": {
+                        "description": "Ошибка проверки данных",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Неверные учетные данные",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Слишком много попыток смены пароля. Попробуйте позже.",
+                        "headers": {
+                            "Retry-After": {
+                                "schema": {
+                                    "type": "integer",
+                                    "description": "Время в секундах до следующей попытки",
+                                    "example": 60
+                                }
+                            },
+                            "X-RateLimit-Limit": {
+                                "schema": {
+                                    "type": "integer",
+                                    "description": "Лимит запросов в минуту",
+                                    "example": 2
                                 }
                             },
                             "X-RateLimit-Remaining": {
@@ -913,31 +1055,6 @@
                         "type": "string",
                         "format": "password",
                         "example": "securepassword123"
-                    }
-                }
-            },
-            "UserUpdateRequest": {
-                "type": "object",
-                "properties": {
-                    "nickname": {
-                        "type": "string",
-                        "minLength": 3,
-                        "maxLength": 20,
-                        "description": "Новое имя пользователя",
-                        "example": "NewCubeMaster"
-                    },
-                    "currentPassword": {
-                        "type": "string",
-                        "format": "password",
-                        "description": "Текущий пароль",
-                        "example": "securepassword123"
-                    },
-                    "newPassword": {
-                        "type": "string",
-                        "format": "password",
-                        "minLength": 6,
-                        "description": "Новый пароль",
-                        "example": "newsecurepassword456"
                     }
                 }
             },
