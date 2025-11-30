@@ -155,4 +155,13 @@ public class JwtService {
     public Instant getRefreshTokenExpirationTime() {
         return Instant.now().plusSeconds(refreshTokenExpirationSeconds);
     }
+
+    public Long getUserIdFromToken(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("userId", Long.class);
+    }
 }

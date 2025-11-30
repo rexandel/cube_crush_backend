@@ -71,13 +71,6 @@ public class AuthService {
     }
 
     @Transactional
-    public void logout(String jti) {
-        tokenService.revokeSession(jti);
-        tokenService.revokeToken(jti, jwtService.getExpirationFromJti(jti));
-        log.info("User logged out, jti: {}", jti);
-    }
-
-    @Transactional
     public AuthResult refreshTokens(String refreshToken) {
         String refreshTokenHash = jwtService.hashToken(refreshToken);
 
@@ -136,5 +129,20 @@ public class AuthService {
                 return new AuthResult(user, accessToken, refreshToken);
             }
         }
+    }
+
+    @Transactional
+    public void logout(String authHeader) {
+        String token = extractToken(authHeader);
+        String jti = jwtService.getJtiFromToken(token);
+        tokenService.revokeSession(jti);
+        tokenService.revokeToken(jti, jwtService.getExpirationFromToken(token));
+    }
+
+    private String extractToken(String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        throw new IllegalArgumentException("Invalid Authorization header");
     }
 }

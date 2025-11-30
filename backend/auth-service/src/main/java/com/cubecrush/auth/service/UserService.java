@@ -46,9 +46,13 @@ public class UserService {
     }
 
     @Transactional
-    public void changePassword(Long userId, String newPassword) {
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+
+        if (!validatePassword(currentPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("Invalid current password");
+        }
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
@@ -68,5 +72,9 @@ public class UserService {
         User updatedUser = userRepository.save(user);
         log.info("Nickname updated for user id: {} to: {}", userId, newNickname);
         return updatedUser;
+    }
+
+    public Optional<User> findById(Long userId) {
+        return userRepository.findById(userId);
     }
 }
