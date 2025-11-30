@@ -2,7 +2,7 @@
     "openapi": "3.0.0",
     "info": {
         "title": "Cube Crush API",
-        "version": "1.2.0",
+        "version": "1.3.0",
         "description": "API для мобильной игры Cube Crush"
     },
     "servers": [
@@ -64,7 +64,7 @@
                         }
                     },
                     "409": {
-                        "description": "Пользователь с такой электронной почтой или именем уже существует",
+                        "description": "Пользователь с таким именем уже существует",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -753,41 +753,34 @@
             "RegisterRequest": {
                 "type": "object",
                 "required": [
-                    "email",
-                    "password",
-                    "nickname"
+                    "nickname",
+                    "password"
                 ],
                 "properties": {
-                    "email": {
+                    "nickname": {
                         "type": "string",
-                        "format": "email",
-                        "example": "player@example.com"
+                        "minLength": 3,
+                        "maxLength": 20,
+                        "example": "CubeMaster"
                     },
                     "password": {
                         "type": "string",
                         "format": "password",
                         "minLength": 6,
                         "example": "securepassword123"
-                    },
-                    "nickname": {
-                        "type": "string",
-                        "minLength": 3,
-                        "maxLength": 20,
-                        "example": "CubeMaster"
                     }
                 }
             },
             "LoginRequest": {
                 "type": "object",
                 "required": [
-                    "email",
+                    "nickname",
                     "password"
                 ],
                 "properties": {
-                    "email": {
+                    "nickname": {
                         "type": "string",
-                        "format": "email",
-                        "example": "player@example.com"
+                        "example": "CubeMaster"
                     },
                     "password": {
                         "type": "string",
@@ -832,10 +825,6 @@
                         "type": "integer",
                         "example": 123
                     },
-                    "email": {
-                        "type": "string",
-                        "example": "player@example.com"
-                    },
                     "nickname": {
                         "type": "string",
                         "example": "CubeMaster"
@@ -853,10 +842,6 @@
                     "id": {
                         "type": "integer",
                         "example": 123
-                    },
-                    "email": {
-                        "type": "string",
-                        "example": "player@example.com"
                     },
                     "nickname": {
                         "type": "string",
@@ -976,7 +961,7 @@
                     },
                     "retryAfter": {
                         "type": "integer",
-                        "description": "Время в секундах до следующей попытки (только для ошибки 429)",
+                        "description": "Время в секундах до следующей попытки",
                         "example": 60
                     },
                     "timestamp": {
