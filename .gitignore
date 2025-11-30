@@ -1,0 +1,101 @@
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.properties
+
+# Gradle
+.gradle/
+build/
+
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+.classpath
+.project
+.settings/
+bin/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.h2.db
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Application specific
+/config/application-*.properties
+!/config/application.properties
+
+# Microservices build outputs
+**/target/
+**/build/
+
+# Docker
+docker-compose.override.yml
+
+# Temporary files
+*.tmp
+*.temp
+
+# Coverage reports
+*.gcda
+*.gcno
+*.gcov
+
+# Profiling
+*.hprof
+
+# Package Files
+*.rar
+*.7z
+
+# Virtual machine crash logs
+hs_err_pid*
+
+# Maven Wrapper
+**/mvnw
+**/mvnw.cmd
+**/.mvn/
+
+# Other .git files
+**/.gitignore
+!/.gitignore
+**/.gitattributes
+!/.gitattributes
