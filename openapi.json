@@ -2,7 +2,7 @@
     "openapi": "3.0.0",
     "info": {
         "title": "Cube Crush API",
-        "version": "1.3.0",
+        "version": "1.4.0",
         "description": "API для мобильной игры Cube Crush"
     },
     "servers": [
@@ -532,6 +532,133 @@
                         }
                     }
                 }
+            },
+            "patch": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Обновить данные пользователя",
+                "description": "Обновление ника и/или пароля текущего пользователя",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserUpdateRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Данные пользователя успешно обновлены",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserProfile"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка валидации данных",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Неверные учетные данные",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Пользователь с таким ником уже существует",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Слишком много попыток обновления. Попробуйте позже.",
+                        "headers": {
+                            "Retry-After": {
+                                "schema": {
+                                    "type": "integer",
+                                    "description": "Время в секундах до следующей попытки",
+                                    "example": 60
+                                }
+                            },
+                            "X-RateLimit-Limit": {
+                                "schema": {
+                                    "type": "integer",
+                                    "description": "Лимит запросов в минуту",
+                                    "example": 5
+                                }
+                            },
+                            "X-RateLimit-Remaining": {
+                                "schema": {
+                                    "type": "integer",
+                                    "description": "Оставшееся количество запросов",
+                                    "example": 0
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "Ошибка подключения к базе данных или внешним сервисам",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Сервис временно недоступен",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "/game/scores": {
@@ -789,6 +916,31 @@
                     }
                 }
             },
+            "UserUpdateRequest": {
+                "type": "object",
+                "properties": {
+                    "nickname": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 20,
+                        "description": "Новый никнейм пользователя",
+                        "example": "NewCubeMaster"
+                    },
+                    "currentPassword": {
+                        "type": "string",
+                        "format": "password",
+                        "description": "Текущий пароль (обязателен при смене пароля)",
+                        "example": "securepassword123"
+                    },
+                    "newPassword": {
+                        "type": "string",
+                        "format": "password",
+                        "minLength": 6,
+                        "description": "Новый пароль",
+                        "example": "newsecurepassword456"
+                    }
+                }
+            },
             "ScoreSubmitRequest": {
                 "type": "object",
                 "required": [
@@ -950,7 +1102,9 @@
                             "USER_NOT_FOUND",
                             "DATABASE_UNAVAILABLE",
                             "SERVICE_UNAVAILABLE",
-                            "RATE_LIMIT_EXCEEDED"
+                            "RATE_LIMIT_EXCEEDED",
+                            "INVALID_CURRENT_PASSWORD",
+                            "PASSWORD_TOO_WEAK"
                         ],
                         "example": "USER_ALREADY_EXISTS"
                     },
