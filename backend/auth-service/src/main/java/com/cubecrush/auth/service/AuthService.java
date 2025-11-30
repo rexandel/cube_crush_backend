@@ -1,29 +1,35 @@
 package com.cubecrush.auth.service;
 
-import com.cubecrush.auth.model.User;
+import com.cubecrush.auth.client.UserServiceClient;
 import com.cubecrush.auth.model.UserSession;
+import com.cubecrush.auth.web.dto.CreateUserRequest;
+import com.cubecrush.auth.web.dto.UserProfile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.cubecrush.auth.web.dto.TokenValidationResponse;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-    private final UserService userService;
+    private final UserServiceClient userServiceClient; // ← ЗАМЕНИЛИ UserService
     private final TokenService tokenService;
     private final JwtService jwtService;
 
     @Transactional
     public AuthResult register(String nickname, String password) {
-        User user = userService.createUser(nickname, password);
+        UserProfile userProfile = userServiceClient.createUser(
+                new CreateUserRequest(nickname, password)
+        );
 
-        String accessToken = jwtService.generateAccessToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
+        String accessToken = jwtService.generateAccessToken(userProfile.id(), userProfile.nickname());
+        String refreshToken = jwtService.generateRefreshToken(userProfile.id(), userProfile.nickname());
 
         UserSession session = tokenService.createSession(
-                user,
+                userProfile.id(),
+                userProfile.nickname(),
                 jwtService.getJtiFromToken(accessToken),
                 jwtService.hashToken(accessToken),
                 jwtService.hashToken(refreshToken),
@@ -33,7 +39,7 @@ public class AuthService {
 
         log.info("User registered successfully: {}", nickname);
         return AuthResult.builder()
-                .user(user)
+                .userProfile(userProfile)
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
@@ -41,20 +47,22 @@ public class AuthService {
 
     @Transactional
     public AuthResult login(String nickname, String password) {
-        User user = userService.findByNickname(nickname)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
 
-        if (!userService.validatePassword(password, user.getPasswordHash())) {
+        boolean isValid = userServiceClient.validateCredentials(nickname, password);
+        if (!isValid) {
             throw new IllegalArgumentException("Invalid credentials");
         }
 
-        tokenService.revokeAllUserSessions(user.getId());
+        UserProfile userProfile = userServiceClient.getUserByNickname(nickname);
 
-        String accessToken = jwtService.generateAccessToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
+        tokenService.revokeAllUserSessions(userProfile.id());
+
+        String accessToken = jwtService.generateAccessToken(userProfile.id(), userProfile.nickname());
+        String refreshToken = jwtService.generateRefreshToken(userProfile.id(), userProfile.nickname());
 
         UserSession session = tokenService.createSession(
-                user,
+                userProfile.id(),
+                userProfile.nickname(),
                 jwtService.getJtiFromToken(accessToken),
                 jwtService.hashToken(accessToken),
                 jwtService.hashToken(refreshToken),
@@ -64,7 +72,7 @@ public class AuthService {
 
         log.info("User logged in successfully: {}", nickname);
         return AuthResult.builder()
-                .user(user)
+                .userProfile(userProfile)
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
@@ -79,12 +87,12 @@ public class AuthService {
 
         tokenService.revokeSession(session.getJti());
 
-        User user = session.getUser();
-        String newAccessToken = jwtService.generateAccessToken(user);
-        String newRefreshToken = jwtService.generateRefreshToken(user);
+        String newAccessToken = jwtService.generateAccessToken(session.getUserId(), session.getUserNickname());
+        String newRefreshToken = jwtService.generateRefreshToken(session.getUserId(), session.getUserNickname());
 
         UserSession newSession = tokenService.createSession(
-                user,
+                session.getUserId(),
+                session.getUserNickname(),
                 jwtService.getJtiFromToken(newAccessToken),
                 jwtService.hashToken(newAccessToken),
                 jwtService.hashToken(newRefreshToken),
@@ -92,26 +100,52 @@ public class AuthService {
                 jwtService.getRefreshTokenExpirationTime()
         );
 
-        log.info("Tokens refreshed for user: {}", user.getNickname());
+        log.info("Tokens refreshed for user: {}", session.getUserNickname());
+
+        UserProfile userProfile = userServiceClient.getUserById(session.getUserId());
+
         return AuthResult.builder()
-                .user(user)
+                .userProfile(userProfile)
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken)
                 .build();
     }
 
-    public record AuthResult(User user, String accessToken, String refreshToken) {
+    public boolean validateToken(String token) {
+        try {
+            return jwtService.validateToken(token);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public TokenValidationResponse validateTokenWithUser(String token) {
+        try {
+            if (!jwtService.validateToken(token)) {
+                return new TokenValidationResponse(false, null, null);
+            }
+
+            Long userId = jwtService.getUserIdFromToken(token);
+            String username = jwtService.getUsernameFromToken(token);
+
+            return new TokenValidationResponse(true, userId, username);
+        } catch (Exception e) {
+            return new TokenValidationResponse(false, null, null);
+        }
+    }
+
+    public record AuthResult(UserProfile userProfile, String accessToken, String refreshToken) {
         public static AuthResultBuilder builder() {
             return new AuthResultBuilder();
         }
 
         public static class AuthResultBuilder {
-            private User user;
+            private UserProfile userProfile;
             private String accessToken;
             private String refreshToken;
 
-            public AuthResultBuilder user(User user) {
-                this.user = user;
+            public AuthResultBuilder userProfile(UserProfile userProfile) {
+                this.userProfile = userProfile;
                 return this;
             }
 
@@ -126,7 +160,7 @@ public class AuthService {
             }
 
             public AuthResult build() {
-                return new AuthResult(user, accessToken, refreshToken);
+                return new AuthResult(userProfile, accessToken, refreshToken);
             }
         }
     }

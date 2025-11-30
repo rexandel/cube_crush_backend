@@ -20,9 +20,11 @@ public class UserSession {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
+    @Column(name = "user_nickname", nullable = false, length = 100)
+    private String userNickname;
 
     @Column(unique = true, nullable = false, length = 255)
     private String jti;

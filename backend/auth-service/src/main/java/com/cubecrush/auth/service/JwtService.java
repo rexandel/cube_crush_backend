@@ -1,6 +1,5 @@
 package com.cubecrush.auth.service;
 
-import com.cubecrush.auth.model.User;
 import com.cubecrush.auth.model.UserSession;
 import com.cubecrush.auth.repository.UserSessionRepository;
 import io.jsonwebtoken.*;
@@ -42,15 +41,16 @@ public class JwtService {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateAccessToken(User user) {
+    // ОБНОВЛЕННЫЕ МЕТОДЫ - принимают userId и nickname вместо User
+    public String generateAccessToken(Long userId, String nickname) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", user.getId());
-        claims.put("nickname", user.getNickname());
+        claims.put("userId", userId);
+        claims.put("nickname", nickname);
         claims.put("type", "access");
 
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(user.getNickname())
+                .setSubject(nickname)
                 .setIssuedAt(new Date())
                 .setExpiration(Date.from(Instant.now().plusSeconds(accessTokenExpirationSeconds)))
                 .setId(UUID.randomUUID().toString())
@@ -58,14 +58,14 @@ public class JwtService {
                 .compact();
     }
 
-    public String generateRefreshToken(User user) {
+    public String generateRefreshToken(Long userId, String nickname) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", user.getId());
+        claims.put("userId", userId);
         claims.put("type", "refresh");
 
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(user.getNickname())
+                .setSubject(nickname)
                 .setIssuedAt(new Date())
                 .setExpiration(Date.from(Instant.now().plusSeconds(refreshTokenExpirationSeconds)))
                 .setId(UUID.randomUUID().toString())

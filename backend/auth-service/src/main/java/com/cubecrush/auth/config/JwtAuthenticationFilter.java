@@ -40,7 +40,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (username != null && userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 if (jwtService.validateToken(token)) {
-                    // Создаем кастомный Principal с userId
                     UserPrincipal userPrincipal = new UserPrincipal(userId, username);
 
                     UsernamePasswordAuthenticationToken authToken =

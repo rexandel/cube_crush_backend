@@ -1,7 +1,6 @@
 package com.cubecrush.auth.service;
 
 import com.cubecrush.auth.model.RevokedToken;
-import com.cubecrush.auth.model.User;
 import com.cubecrush.auth.model.UserSession;
 import com.cubecrush.auth.repository.RevokedTokenRepository;
 import com.cubecrush.auth.repository.UserSessionRepository;
@@ -23,10 +22,11 @@ public class TokenService {
     private final RevokedTokenRepository revokedTokenRepository;
 
     @Transactional
-    public UserSession createSession(User user, String jti, String accessTokenHash, String refreshTokenHash,
+    public UserSession createSession(Long userId, String userNickname, String jti, String accessTokenHash, String refreshTokenHash,
                                      Instant accessTokenExpiresAt, Instant refreshTokenExpiresAt) {
         UserSession session = UserSession.builder()
-                .user(user)
+                .userId(userId)
+                .userNickname(userNickname)
                 .jti(jti)
                 .accessTokenHash(accessTokenHash)
                 .refreshTokenHash(refreshTokenHash)
@@ -36,7 +36,7 @@ public class TokenService {
                 .build();
 
         UserSession savedSession = userSessionRepository.save(session);
-        log.info("Created session with jti: {} for user: {}", jti, user.getNickname());
+        log.info("Created session with jti: {} for user: {}", jti, userNickname);
         return savedSession;
     }
 

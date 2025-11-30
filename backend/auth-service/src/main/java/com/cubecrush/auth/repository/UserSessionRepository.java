@@ -15,19 +15,17 @@ import java.util.Optional;
 public interface UserSessionRepository extends JpaRepository<UserSession, Long> {
     Optional<UserSession> findByJti(String jti);
     Optional<UserSession> findByRefreshTokenHash(String refreshTokenHash);
+    Optional<UserSession> findByAccessTokenHash(String accessTokenHash);
     boolean existsByJti(String jti);
 
-    List<UserSession> findByUserIdAndIsRevokedFalseAndAccessTokenExpiresAtAfter(Long userId, Instant now);
-
-    List<UserSession> findByUserIdAndIsRevokedFalseAndRefreshTokenExpiresAtAfter(Long userId, Instant now);
+    List<UserSession> findByUserIdAndIsRevokedFalseAndAccessTokenExpiresAtAfter(Long userId, Instant time);
+    List<UserSession> findByUserIdAndIsRevokedFalseAndRefreshTokenExpiresAtAfter(Long userId, Instant time);
 
     @Modifying
-    @Query("UPDATE UserSession us SET us.isRevoked = true WHERE us.user.id = :userId AND us.isRevoked = false")
+    @Query("UPDATE UserSession us SET us.isRevoked = true WHERE us.userId = :userId AND us.isRevoked = false") // ← ИСПРАВИЛ: us.userId
     void revokeAllUserSessions(@Param("userId") Long userId);
 
     @Modifying
     @Query("DELETE FROM UserSession us WHERE us.refreshTokenExpiresAt < :now")
     void deleteExpiredSessions(@Param("now") Instant now);
-
-    Optional<UserSession> findByAccessTokenHash(String accessTokenHash);
 }

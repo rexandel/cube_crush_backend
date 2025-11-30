@@ -1,7 +1,7 @@
-package com.cubecrush.auth.service;
+package com.cubecrush.user.service;
 
-import com.cubecrush.auth.model.User;
-import com.cubecrush.auth.repository.UserRepository;
+import com.cubecrush.user.model.User;
+import com.cubecrush.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,24 +21,8 @@ public class UserService {
         return userRepository.findByNickname(nickname);
     }
 
-    public boolean existsByNickname(String nickname) {
-        return userRepository.existsByNickname(nickname);
-    }
-
-    @Transactional
-    public User createUser(String nickname, String password) {
-        if (existsByNickname(nickname)) {
-            throw new IllegalArgumentException("User with nickname '" + nickname + "' already exists");
-        }
-
-        User user = User.builder()
-                .nickname(nickname)
-                .passwordHash(passwordEncoder.encode(password))
-                .build();
-
-        User savedUser = userRepository.save(user);
-        log.info("Created new user with id: {} and nickname: {}", savedUser.getId(), savedUser.getNickname());
-        return savedUser;
+    public Optional<User> findById(Long userId) {
+        return userRepository.findById(userId);
     }
 
     public boolean validatePassword(String rawPassword, String encodedPassword) {
@@ -61,7 +45,7 @@ public class UserService {
 
     @Transactional
     public User updateNickname(Long userId, String newNickname) {
-        if (existsByNickname(newNickname)) {
+        if (userRepository.existsByNickname(newNickname)) {
             throw new IllegalArgumentException("Nickname '" + newNickname + "' is already taken");
         }
 
@@ -74,7 +58,19 @@ public class UserService {
         return updatedUser;
     }
 
-    public Optional<User> findById(Long userId) {
-        return userRepository.findById(userId);
+    @Transactional
+    public User createUser(String nickname, String password) {
+        if (userRepository.existsByNickname(nickname)) {
+            throw new IllegalArgumentException("User with nickname '" + nickname + "' already exists");
+        }
+
+        User user = User.builder()
+                .nickname(nickname)
+                .passwordHash(passwordEncoder.encode(password))
+                .build();
+
+        User savedUser = userRepository.save(user);
+        log.info("Created new user with id: {} and nickname: {}", savedUser.getId(), savedUser.getNickname());
+        return savedUser;
     }
 }

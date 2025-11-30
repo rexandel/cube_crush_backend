@@ -12,32 +12,3 @@ public class AuthServiceApplication {
         SpringApplication.run(AuthServiceApplication.class, args);
     }
 }
-
-@RestController
-class HealthController {
-
-    @GetMapping("/health")
-    public String health() {
-        return """
-            {
-                "status": "OK",
-                "service": "auth-service",
-                "timestamp": "%s"
-            }
-            """.formatted(java.time.LocalDateTime.now());
-    }
-
-    @GetMapping("/")
-    public String home() {
-        return """
-            <div style="text-align: center; padding: 50px;">
-                <h1>🚀 Cube Crush - Auth Service</h1>
-                <p>Service is running successfully!</p>
-                <ul style="list-style: none; padding: 0;">
-                    <li><a href="/health">Health Check</a></li>
-                    <li><a href="/actuator/health">Spring Boot Actuator</a></li>
-                </ul>
-            </div>
-            """;
-    }
-}

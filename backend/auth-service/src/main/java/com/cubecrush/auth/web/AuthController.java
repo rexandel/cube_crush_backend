@@ -21,7 +21,7 @@ public class AuthController {
         return new AuthResponse(
                 result.accessToken(),
                 result.refreshToken(),
-                UserProfile.from(result.user())
+                result.userProfile()
         );
     }
 
@@ -31,7 +31,7 @@ public class AuthController {
         return new AuthResponse(
                 result.accessToken(),
                 result.refreshToken(),
-                UserProfile.from(result.user())
+                result.userProfile()
         );
     }
 
@@ -47,8 +47,18 @@ public class AuthController {
         return new AuthResponse(
                 result.accessToken(),
                 result.refreshToken(),
-                UserProfile.from(result.user())
+                result.userProfile()
         );
+    }
+
+    @PostMapping("/validate")
+    public boolean validateToken(@RequestHeader("Authorization") String token) {
+        return authService.validateToken(extractToken(token));
+    }
+
+    @PostMapping("/validate-token")
+    public TokenValidationResponse validateTokenWithUser(@RequestHeader("Authorization") String token) {
+        return authService.validateTokenWithUser(extractToken(token));
     }
 
     private String extractToken(String authHeader) {
