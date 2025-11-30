@@ -2,7 +2,7 @@
     "openapi": "3.0.0",
     "info": {
         "title": "Cube Crush API",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "description": "API для мобильной игры Cube Crush"
     },
     "servers": [
@@ -65,6 +65,47 @@
                     },
                     "409": {
                         "description": "Пользователь с такой электронной почтой или именем уже существует",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Слишком много попыток регистрации. Попробуйте позже.",
+                        "headers": {
+                            "Retry-After": {
+                                "schema": {
+                                    "type": "integer",
+                                    "description": "Время в секундах до следующей попытки",
+                                    "example": 60
+                                }
+                            },
+                            "X-RateLimit-Limit": {
+                                "schema": {
+                                    "type": "integer",
+                                    "description": "Лимит запросов в минуту",
+                                    "example": 10
+                                }
+                            },
+                            "X-RateLimit-Remaining": {
+                                "schema": {
+                                    "type": "integer",
+                                    "description": "Оставшееся количество запросов",
+                                    "example": 0
+                                }
+                            },
+                            "X-RateLimit-Reset": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "Время сброса лимита",
+                                    "example": "2025-01-30T10:31:00Z"
+                                }
+                            }
+                        },
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -145,6 +186,47 @@
                     },
                     "401": {
                         "description": "Неверные учетные данные",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Слишком много попыток входа. Попробуйте позже.",
+                        "headers": {
+                            "Retry-After": {
+                                "schema": {
+                                    "type": "integer",
+                                    "description": "Время в секундах до следующей попытки",
+                                    "example": 60
+                                }
+                            },
+                            "X-RateLimit-Limit": {
+                                "schema": {
+                                    "type": "integer",
+                                    "description": "Лимит запросов в минуту",
+                                    "example": 5
+                                }
+                            },
+                            "X-RateLimit-Remaining": {
+                                "schema": {
+                                    "type": "integer",
+                                    "description": "Оставшееся количество запросов",
+                                    "example": 0
+                                }
+                            },
+                            "X-RateLimit-Reset": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "Время сброса лимита",
+                                    "example": "2025-01-30T10:31:00Z"
+                                }
+                            }
+                        },
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -260,6 +342,7 @@
                     "Auth"
                 ],
                 "summary": "Обновить access token",
+                "description": "Обновление access token с использованием refresh token",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -312,6 +395,39 @@
                     },
                     "403": {
                         "description": "Доступ запрещен",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Слишком много запросов на обновление токена",
+                        "headers": {
+                            "Retry-After": {
+                                "schema": {
+                                    "type": "integer",
+                                    "description": "Время в секундах до следующей попытки",
+                                    "example": 60
+                                }
+                            },
+                            "X-RateLimit-Limit": {
+                                "schema": {
+                                    "type": "integer",
+                                    "description": "Лимит запросов в минуту",
+                                    "example": 10
+                                }
+                            },
+                            "X-RateLimit-Remaining": {
+                                "schema": {
+                                    "type": "integer",
+                                    "description": "Оставшееся количество запросов",
+                                    "example": 0
+                                }
+                            }
+                        },
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -848,7 +964,8 @@
                             "REFRESH_TOKEN_EXPIRED",
                             "USER_NOT_FOUND",
                             "DATABASE_UNAVAILABLE",
-                            "SERVICE_UNAVAILABLE"
+                            "SERVICE_UNAVAILABLE",
+                            "RATE_LIMIT_EXCEEDED"
                         ],
                         "example": "USER_ALREADY_EXISTS"
                     },
@@ -856,6 +973,11 @@
                         "type": "string",
                         "description": "Ключ для локализации в мобильном приложении",
                         "example": "error.user_already_exists"
+                    },
+                    "retryAfter": {
+                        "type": "integer",
+                        "description": "Время в секундах до следующей попытки (только для ошибки 429)",
+                        "example": 60
                     },
                     "timestamp": {
                         "type": "string",
