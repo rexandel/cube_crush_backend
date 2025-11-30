@@ -2,7 +2,7 @@
     "openapi": "3.0.0",
     "info": {
         "title": "Cube Crush API",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "description": "API для мобильной игры Cube Crush"
     },
     "servers": [
@@ -839,11 +839,23 @@
                 "properties": {
                     "error": {
                         "type": "string",
-                        "example": "Неверные учетные данные"
+                        "description": "Машинно-читаемый код ошибки для логики приложения",
+                        "enum": [
+                            "USER_ALREADY_EXISTS",
+                            "VALIDATION_ERROR",
+                            "AUTHENTICATION_FAILED",
+                            "INVALID_REFRESH_TOKEN",
+                            "REFRESH_TOKEN_EXPIRED",
+                            "USER_NOT_FOUND",
+                            "DATABASE_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE"
+                        ],
+                        "example": "USER_ALREADY_EXISTS"
                     },
-                    "message": {
+                    "localizationKey": {
                         "type": "string",
-                        "example": "Неверная электронная почта или пароль"
+                        "description": "Ключ для локализации в мобильном приложении",
+                        "example": "error.user_already_exists"
                     },
                     "timestamp": {
                         "type": "string",
