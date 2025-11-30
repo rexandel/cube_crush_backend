@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "user_sessions")
@@ -24,31 +24,32 @@ public class UserSession {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 255)
     private String jti;
 
-    @Column(name = "refresh_token_hash", unique = true, nullable = false)
+    @Column(name = "refresh_token_hash", unique = true, nullable = false, length = 255)
     private String refreshTokenHash;
 
-    @Column(name = "access_token_hash")
+    @Column(name = "access_token_hash", length = 255)
     private String accessTokenHash;
 
-    @Column(name = "expires_at", nullable = false)
-    private LocalDateTime expiresAt;
+    @Column(name = "access_token_expires_at", nullable = false)
+    private Instant accessTokenExpiresAt;
+
+    @Column(name = "refresh_token_expires_at", nullable = false)
+    private Instant refreshTokenExpiresAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @Column(name = "is_revoked", nullable = false)
+    @Builder.Default
     private Boolean isRevoked = false;
 
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
-        if (isRevoked == null) {
-            isRevoked = false;
+            createdAt = Instant.now();
         }
     }
 }

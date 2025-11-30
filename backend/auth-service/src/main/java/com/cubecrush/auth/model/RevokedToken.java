@@ -17,11 +17,13 @@ import java.time.Instant;
 public class RevokedToken {
 
     @Id
-    private String jti; // JWT ID
+    @Column(length = 255)
+    private String jti;
 
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
 
     @Column(name = "revoked_at", nullable = false)
+    @Builder.Default
     private Instant revokedAt = Instant.now();
 }

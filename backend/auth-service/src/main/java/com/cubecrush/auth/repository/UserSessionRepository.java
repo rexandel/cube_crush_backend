@@ -7,25 +7,27 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface UserSessionRepository extends JpaRepository<UserSession, Long> {
     Optional<UserSession> findByJti(String jti);
-
     Optional<UserSession> findByRefreshTokenHash(String refreshTokenHash);
+    boolean existsByJti(String jti);
 
-    List<UserSession> findByUserIdAndIsRevokedFalseAndExpiresAtAfter(Long userId, LocalDateTime now);
+    List<UserSession> findByUserIdAndIsRevokedFalseAndAccessTokenExpiresAtAfter(Long userId, Instant now);
+
+    List<UserSession> findByUserIdAndIsRevokedFalseAndRefreshTokenExpiresAtAfter(Long userId, Instant now);
 
     @Modifying
     @Query("UPDATE UserSession us SET us.isRevoked = true WHERE us.user.id = :userId AND us.isRevoked = false")
     void revokeAllUserSessions(@Param("userId") Long userId);
 
     @Modifying
-    @Query("DELETE FROM UserSession us WHERE us.expiresAt < :now")
-    void deleteExpiredSessions(@Param("now") LocalDateTime now);
+    @Query("DELETE FROM UserSession us WHERE us.refreshTokenExpiresAt < :now")
+    void deleteExpiredSessions(@Param("now") Instant now);
 
-    boolean existsByJti(String jti);
+    Optional<UserSession> findByAccessTokenHash(String accessTokenHash);
 }
