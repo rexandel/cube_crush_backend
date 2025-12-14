@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS scores (
 CREATE TABLE IF NOT EXISTS user_sessions (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    user_nickname VARCHAR(100) NOT NULL,
     jti VARCHAR(255) UNIQUE NOT NULL,
     refresh_token_hash VARCHAR(255) UNIQUE NOT NULL,
     access_token_hash VARCHAR(255),
