@@ -82,10 +82,11 @@ public class GatewayConfig {
                 )
 
                 .route("user-create", r -> r
-                        .path("/api/v1/users")
+                        .path("/api/v1/users", "/user-service/api/v1/users")
                         .and()
                         .method(HttpMethod.POST)
                         .filters(f -> f
+                                .rewritePath("/user-service/(?<segment>.*)", "/${segment}")
                                 .filter(requestLogger)
                                 .filter(internalServiceFilter)
                         )
@@ -93,10 +94,11 @@ public class GatewayConfig {
                 )
 
                 .route("user-profile", r -> r
-                        .path("/api/v1/users/**")
+                        .path("/api/v1/users/**", "/user-service/api/v1/users/**")
                         .and()
-                        .method(HttpMethod.GET, HttpMethod.PUT, HttpMethod.DELETE)
+                        .method(HttpMethod.GET, HttpMethod.PUT, HttpMethod.PATCH, HttpMethod.DELETE)
                         .filters(f -> f
+                                .rewritePath("/user-service/(?<segment>.*)", "/${segment}")
                                 .filter(jwtAuthFilter)
                                 .filter(requestLogger)
                                 .filter(internalServiceFilter)

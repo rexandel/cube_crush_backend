@@ -3,6 +3,7 @@ package com.cubecrush.auth.web;
 import com.cubecrush.auth.service.AuthService;
 import com.cubecrush.auth.web.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +48,7 @@ public class AuthController {
     @PostMapping("/logout")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "User logout", description = "Invalidates user's authentication tokens")
-    public void logout(@RequestHeader("Authorization") String authHeader) {
+    public void logout(@Parameter(hidden = true) @RequestHeader("Authorization") String authHeader) {
         String token = extractToken(authHeader);
         log.info("Logout request for token: {}", maskToken(token));
         authService.logout(authHeader);
@@ -69,7 +70,8 @@ public class AuthController {
 
     @PostMapping("/validate")
     @Operation(summary = "Validate token", description = "Checks if the provided token is valid")
-    public TokenValidationResponse validateToken(@RequestHeader("Authorization") String token) {
+    @SecurityRequirement(name = "bearerAuth")
+    public TokenValidationResponse validateToken(@Parameter(hidden = true) @RequestHeader("Authorization") String token) {
         String cleanToken = extractToken(token);
         log.debug("Token validation request: {}", maskToken(cleanToken));
 

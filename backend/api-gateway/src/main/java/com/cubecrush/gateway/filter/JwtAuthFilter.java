@@ -55,7 +55,8 @@ public class JwtAuthFilter implements GatewayFilter {
         try {
             Claims claims = validateToken(token);
 
-            String userId = claims.get("userId", String.class);
+            Object userIdObj = claims.get("userId");
+            String userId = userIdObj != null ? String.valueOf(userIdObj) : null;
             String email = claims.getSubject();
 
             if (!StringUtils.hasText(userId)) {
@@ -74,7 +75,7 @@ public class JwtAuthFilter implements GatewayFilter {
             return chain.filter(exchange.mutate().request(mutatedRequest).build());
 
         } catch (JwtException e) {
-            log.warn("JwtAuthFilter: Invalid JWT token - {}", e.getClass().getSimpleName());
+            log.warn("JwtAuthFilter: Invalid JWT token - {} : {}", e.getClass().getSimpleName(), e.getMessage());
             String message;
             if (e instanceof io.jsonwebtoken.ExpiredJwtException) {
                 message = "Token has expired";
