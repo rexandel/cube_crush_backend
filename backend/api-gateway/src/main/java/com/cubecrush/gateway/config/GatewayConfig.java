@@ -106,12 +106,49 @@ public class GatewayConfig {
                         .uri("lb://user-service")
                 )
 
+                .route("game-service-public", r -> r
+                        .path("/api/v1/game/top", "/game-service/api/v1/game/top")
+                        .filters(f -> f
+                                .rewritePath("/game-service/(?<segment>.*)", "/${segment}")
+                                .filter(requestLogger)
+                                .filter(internalServiceFilter)
+                        )
+                        .uri("lb://game-service")
+                )
+
+                .route("game-service", r -> r
+                        .path("/api/v1/game/**", "/game-service/api/v1/game/**")
+                        .filters(f -> f
+                                .rewritePath("/game-service/(?<segment>.*)", "/${segment}")
+                                .filter(jwtAuthFilter)
+                                .filter(requestLogger)
+                                .filter(internalServiceFilter)
+                        )
+                        .uri("lb://game-service")
+                )
+
                 .route("gateway-health", r -> r
                         .path("/actuator/**")
                         .filters(f -> f
                                 .filter(requestLogger)
                         )
                         .uri("lb://api-gateway")
+                )
+
+                .route("auth-service-docs", r -> r
+                        .path("/auth-service/v3/api-docs")
+                        .filters(f -> f.rewritePath("/auth-service/(?<segment>.*)", "/${segment}"))
+                        .uri("lb://auth-service")
+                )
+                .route("user-service-docs", r -> r
+                        .path("/user-service/v3/api-docs")
+                        .filters(f -> f.rewritePath("/user-service/(?<segment>.*)", "/${segment}"))
+                        .uri("lb://user-service")
+                )
+                .route("game-service-docs", r -> r
+                        .path("/game-service/v3/api-docs")
+                        .filters(f -> f.rewritePath("/game-service/(?<segment>.*)", "/${segment}"))
+                        .uri("lb://game-service")
                 )
 
                 .build();
