@@ -1,4 +1,4 @@
-package com.cubecrush.auth.web.dto;
+package com.cubecrush.game.web.dto;
 
 import java.time.Instant;
 

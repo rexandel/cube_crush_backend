@@ -1,5 +1,6 @@
 package com.cubecrush.user.web;
 
+import com.cubecrush.user.exception.UserException;
 import com.cubecrush.user.model.User;
 import com.cubecrush.user.service.UserService;
 import com.cubecrush.user.web.dto.CreateUserRequest;
@@ -9,7 +10,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 @Hidden
 @RestController
@@ -21,28 +21,21 @@ public class UserManagementController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UserProfile createUser(@Valid @RequestBody CreateUserRequest request) {
-        try {
-            User user = userService.createUser(request.nickname(), request.password());
-            return UserProfile.from(user);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("already exists")) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "User already exists", e);
-            }
-            throw e;
-        }
+        User user = userService.createUser(request.nickname(), request.password());
+        return UserProfile.from(user);
     }
 
     @GetMapping("/{userId}")
     public UserProfile getUserById(@PathVariable Long userId) {
         var user = userService.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new UserException("USER_NOT_FOUND", HttpStatus.NOT_FOUND));
         return UserProfile.from(user);
     }
 
     @GetMapping("/by-nickname/{nickname}")
     public UserProfile getUserByNickname(@PathVariable String nickname) {
         var user = userService.findByNickname(nickname)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new UserException("USER_NOT_FOUND", HttpStatus.NOT_FOUND));
         return UserProfile.from(user);
     }
 

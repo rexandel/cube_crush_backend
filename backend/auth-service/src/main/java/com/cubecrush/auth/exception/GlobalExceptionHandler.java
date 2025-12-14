@@ -1,6 +1,6 @@
-package com.cubecrush.user.exception;
+package com.cubecrush.auth.exception;
 
-import com.cubecrush.user.web.dto.ErrorResponse;
+import com.cubecrush.auth.web.dto.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,6 +8,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.stream.Collectors;
 
@@ -15,9 +16,9 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(UserException.class)
-    public ResponseEntity<ErrorResponse> handleUserException(UserException ex) {
-        log.warn("User exception: {} - {}", ex.getLocalizationKey(), ex.getMessage());
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<ErrorResponse> handleAuthException(AuthException ex) {
+        log.warn("Auth exception: {} - {}", ex.getLocalizationKey(), ex.getMessage());
         return ResponseEntity
                 .status(ex.getStatus())
                 .body(new ErrorResponse(
@@ -46,8 +47,33 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    @ExceptionHandler(HttpClientErrorException.class)
+    public ResponseEntity<ErrorResponse> handleHttpClientError(HttpClientErrorException ex) {
+        log.error("Upstream service error: {} - {}", ex.getStatusCode(), ex.getResponseBodyAsString());
+        
+        if (ex.getStatusCode() == HttpStatus.CONFLICT) {
+             return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(
+                        HttpStatus.CONFLICT.value(),
+                        HttpStatus.CONFLICT.getReasonPhrase(),
+                        "Nickname already taken",
+                        "NICKNAME_ALREADY_TAKEN"
+                ));
+        }
+
+        return ResponseEntity
+                .status(ex.getStatusCode())
+                .body(new ErrorResponse(
+                        ex.getStatusCode().value(),
+                        ex.getStatusText(),
+                        ex.getMessage(),
+                        "UPSTREAM_SERVICE_ERROR"
+                ));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
         log.warn("Illegal argument: {}", ex.getMessage());
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)

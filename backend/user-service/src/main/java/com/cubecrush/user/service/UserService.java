@@ -1,9 +1,11 @@
 package com.cubecrush.user.service;
 
+import com.cubecrush.user.exception.UserException;
 import com.cubecrush.user.model.User;
 import com.cubecrush.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,14 +34,14 @@ public class UserService {
     @Transactional
     public void changePassword(Long userId, String currentPassword, String newPassword) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+                .orElseThrow(() -> new UserException("USER_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         log.info("Changing password for user {}. Hash in DB: {}", userId, user.getPasswordHash());
         boolean matches = validatePassword(currentPassword, user.getPasswordHash());
         log.info("Password match result: {}", matches);
 
         if (!matches) {
-            throw new IllegalArgumentException("Invalid current password");
+            throw new UserException("USER_INVALID_PASSWORD", HttpStatus.BAD_REQUEST);
         }
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
@@ -50,11 +52,11 @@ public class UserService {
     @Transactional
     public User updateNickname(Long userId, String newNickname) {
         if (userRepository.existsByNickname(newNickname)) {
-            throw new IllegalArgumentException("Nickname '" + newNickname + "' is already taken");
+            throw new UserException("NICKNAME_ALREADY_TAKEN", HttpStatus.CONFLICT);
         }
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+                .orElseThrow(() -> new UserException("USER_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         user.setNickname(newNickname);
         User updatedUser = userRepository.save(user);
@@ -65,7 +67,7 @@ public class UserService {
     @Transactional
     public User createUser(String nickname, String password) {
         if (userRepository.existsByNickname(nickname)) {
-            throw new IllegalArgumentException("User with nickname '" + nickname + "' already exists");
+            throw new UserException("NICKNAME_ALREADY_TAKEN", HttpStatus.CONFLICT);
         }
 
         User user = User.builder()

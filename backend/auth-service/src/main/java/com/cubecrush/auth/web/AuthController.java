@@ -1,5 +1,6 @@
 package com.cubecrush.auth.web;
 
+import com.cubecrush.auth.exception.AuthException;
 import com.cubecrush.auth.service.AuthService;
 import com.cubecrush.auth.web.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -88,7 +89,7 @@ public class AuthController {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);
         }
-        throw new IllegalArgumentException("Invalid Authorization header");
+        throw new AuthException("AUTH_INVALID_HEADER", HttpStatus.UNAUTHORIZED);
     }
 
     private String maskToken(String token) {

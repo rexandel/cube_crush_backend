@@ -1,6 +1,6 @@
-package com.cubecrush.user.exception;
+package com.cubecrush.game.exception;
 
-import com.cubecrush.user.web.dto.ErrorResponse;
+import com.cubecrush.game.web.dto.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,9 +15,9 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(UserException.class)
-    public ResponseEntity<ErrorResponse> handleUserException(UserException ex) {
-        log.warn("User exception: {} - {}", ex.getLocalizationKey(), ex.getMessage());
+    @ExceptionHandler(GameException.class)
+    public ResponseEntity<ErrorResponse> handleGameException(GameException ex) {
+        log.warn("Game exception: {} - {}", ex.getLocalizationKey(), ex.getMessage());
         return ResponseEntity
                 .status(ex.getStatus())
                 .body(new ErrorResponse(

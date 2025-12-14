@@ -1,15 +1,17 @@
-// src/main/java/com/cubecrush/auth/service/AuthService.java
-
 package com.cubecrush.auth.service;
 
+import com.cubecrush.auth.exception.AuthException;
 import com.cubecrush.auth.model.UserSession;
 import com.cubecrush.auth.web.dto.CreateUserRequest;
-import com.cubecrush.auth.web.dto.UserProfile;
 import com.cubecrush.auth.web.dto.TokenValidationResponse;
+import com.cubecrush.auth.web.dto.UserProfile;
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -37,9 +39,11 @@ public class AuthService {
 
             return createTokensAndSession(userProfile);
 
+        } catch (HttpClientErrorException.Conflict e) {
+            throw new AuthException("NICKNAME_ALREADY_TAKEN", HttpStatus.CONFLICT);
         } catch (Exception e) {
             log.error("Error registering user: {}", nickname, e);
-            throw new RuntimeException("Failed to register user", e);
+            throw new AuthException("AUTH_REGISTRATION_FAILED", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -55,7 +59,7 @@ public class AuthService {
 
             Boolean isValid = restTemplate.postForObject(validateUri, null, Boolean.class);
             if (!Boolean.TRUE.equals(isValid)) {
-                throw new IllegalArgumentException("Invalid credentials");
+                throw new AuthException("AUTH_INVALID_CREDENTIALS", HttpStatus.UNAUTHORIZED);
             }
 
             UserProfile userProfile = restTemplate.getForObject(
@@ -68,47 +72,56 @@ public class AuthService {
 
             return createTokensAndSession(userProfile);
 
+        } catch (AuthException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Error logging in user: {}", nickname, e);
-            throw new RuntimeException("Failed to login user", e);
+            throw new AuthException("AUTH_LOGIN_FAILED", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @Transactional
     public AuthResult refreshTokens(String refreshToken) {
-        String refreshTokenHash = jwtService.hashToken(refreshToken);
+        try {
+            String refreshTokenHash = jwtService.hashToken(refreshToken);
 
-        UserSession session = tokenService.findValidSessionByRefreshToken(refreshTokenHash)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired refresh token"));
+            UserSession session = tokenService.findValidSessionByRefreshToken(refreshTokenHash)
+                    .orElseThrow(() -> new AuthException("AUTH_INVALID_TOKEN", HttpStatus.UNAUTHORIZED));
 
-        tokenService.revokeSession(session.getJti());
+            tokenService.revokeSession(session.getJti());
 
-        String newAccessToken = jwtService.generateAccessToken(session.getUserId(), session.getUserNickname());
-        String newRefreshToken = jwtService.generateRefreshToken(session.getUserId(), session.getUserNickname());
+            String newAccessToken = jwtService.generateAccessToken(session.getUserId(), session.getUserNickname());
+            String newRefreshToken = jwtService.generateRefreshToken(session.getUserId(), session.getUserNickname());
 
-        tokenService.createSession(
-                session.getUserId(),
-                session.getUserNickname(),
-                jwtService.getJtiFromToken(newAccessToken),
-                jwtService.hashToken(newAccessToken),
-                jwtService.hashToken(newRefreshToken),
-                jwtService.getAccessTokenExpirationTime(),
-                jwtService.getRefreshTokenExpirationTime()
-        );
+            tokenService.createSession(
+                    session.getUserId(),
+                    session.getUserNickname(),
+                    jwtService.getJtiFromToken(newAccessToken),
+                    jwtService.hashToken(newAccessToken),
+                    jwtService.hashToken(newRefreshToken),
+                    jwtService.getAccessTokenExpirationTime(),
+                    jwtService.getRefreshTokenExpirationTime()
+            );
 
-        UserProfile userProfile = restTemplate.getForObject(
-                USER_SERVICE + "/{userId}",
-                UserProfile.class,
-                session.getUserId()
-        );
+            UserProfile userProfile = restTemplate.getForObject(
+                    USER_SERVICE + "/{userId}",
+                    UserProfile.class,
+                    session.getUserId()
+            );
 
-        log.info("Tokens refreshed for user: {}", session.getUserNickname());
+            log.info("Tokens refreshed for user: {}", session.getUserNickname());
 
-        return AuthResult.builder()
-                .userProfile(userProfile)
-                .accessToken(newAccessToken)
-                .refreshToken(newRefreshToken)
-                .build();
+            return AuthResult.builder()
+                    .userProfile(userProfile)
+                    .accessToken(newAccessToken)
+                    .refreshToken(newRefreshToken)
+                    .build();
+        } catch (AuthException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error refreshing tokens", e);
+            throw new AuthException("AUTH_REFRESH_FAILED", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     private AuthResult createTokensAndSession(UserProfile userProfile) {
@@ -145,49 +158,37 @@ public class AuthService {
     public TokenValidationResponse validateTokenWithUser(String token) {
         try {
             if (!jwtService.validateToken(token)) {
-                return new TokenValidationResponse(false, null, null);
+                return new TokenValidationResponse(false, null, null, null);
             }
             return new TokenValidationResponse(
                     true,
                     jwtService.getUserIdFromToken(token),
-                    jwtService.getUsernameFromToken(token)
+                    jwtService.getUsernameFromToken(token),
+                    java.util.List.of("USER")
             );
         } catch (Exception e) {
-            return new TokenValidationResponse(false, null, null);
+            return new TokenValidationResponse(false, null, null, null);
         }
     }
 
     @Transactional
     public void logout(String authHeader) {
         String token = extractToken(authHeader);
-        String jti = jwtService.getJtiFromToken(token);
-        tokenService.revokeSession(jti);
+        try {
+            String jti = jwtService.getJtiFromToken(token);
+            tokenService.revokeSession(jti);
+        } catch (Exception e) {
+            log.warn("Error during logout: {}", e.getMessage());
+        }
     }
 
     private String extractToken(String authHeader) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);
         }
-        throw new IllegalArgumentException("Invalid Authorization header");
+        throw new AuthException("AUTH_INVALID_HEADER", HttpStatus.UNAUTHORIZED);
     }
 
-    public record AuthResult(UserProfile userProfile, String accessToken, String refreshToken) {
-        public static AuthResultBuilder builder() {
-            return new AuthResultBuilder();
-        }
-
-        public static class AuthResultBuilder {
-            private UserProfile userProfile;
-            private String accessToken;
-            private String refreshToken;
-
-            public AuthResultBuilder userProfile(UserProfile userProfile) { this.userProfile = userProfile; return this; }
-            public AuthResultBuilder accessToken(String accessToken)         { this.accessToken = accessToken; return this; }
-            public AuthResultBuilder refreshToken(String refreshToken)         { this.refreshToken = refreshToken; return this; }
-
-            public AuthResult build() {
-                return new AuthResult(userProfile, accessToken, refreshToken);
-            }
-        }
-    }
+    @Builder
+    public record AuthResult(UserProfile userProfile, String accessToken, String refreshToken) {}
 }

@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +28,7 @@ public class GameController {
     @Operation(summary = "Submit a new score", description = "Saves a new score for the authenticated user. Updates user stats and global leaderboard if applicable.")
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponse(responseCode = "200", description = "Score saved successfully")
-    public ResponseEntity<Score> submitScore(@Parameter(hidden = true) @RequestHeader("X-User-Id") Long userId, @RequestBody ScoreRequest request) {
+    public ResponseEntity<Score> submitScore(@Parameter(hidden = true) @RequestHeader("X-User-Id") Long userId, @Valid @RequestBody ScoreRequest request) {
         return ResponseEntity.ok(gameService.submitScore(userId, request.getScore()));
     }
 

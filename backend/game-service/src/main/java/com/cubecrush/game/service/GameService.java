@@ -1,5 +1,6 @@
 package com.cubecrush.game.service;
 
+import com.cubecrush.game.exception.GameException;
 import com.cubecrush.game.model.Score;
 import com.cubecrush.game.model.TopPlayer;
 import com.cubecrush.game.model.UserStats;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +31,9 @@ public class GameService {
 
     @Transactional
     public Score submitScore(Long userId, Integer scoreValue) {
+        if (scoreValue < 0) {
+            throw new GameException("GAME_INVALID_SCORE", HttpStatus.BAD_REQUEST);
+        }
         Score score = new Score();
         score.setUserId(userId);
         score.setScore(scoreValue);
@@ -68,7 +73,6 @@ public class GameService {
                     stats.setNickname(response.getBody().getNickname());
                 }
             } catch (Exception e) {
-                // Log error or ignore (nickname will remain null)
                 System.err.println("Failed to fetch nickname for user " + userId + ": " + e.getMessage());
             }
         }

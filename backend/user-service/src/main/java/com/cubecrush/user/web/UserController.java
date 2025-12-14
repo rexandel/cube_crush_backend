@@ -1,5 +1,6 @@
 package com.cubecrush.user.web;
 
+import com.cubecrush.user.exception.UserException;
 import com.cubecrush.user.service.UserService;
 import com.cubecrush.user.web.dto.ChangePasswordRequest;
 import com.cubecrush.user.web.dto.UpdateNicknameRequest;
@@ -21,7 +22,7 @@ public class UserController {
     @SecurityRequirement(name = "bearerAuth")
     public UserProfile getCurrentUserProfile(@Parameter(hidden = true) @RequestHeader("X-User-Id") Long userId) {
         var user = userService.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new UserException("USER_NOT_FOUND", HttpStatus.NOT_FOUND));
         return UserProfile.from(user);
     }
 
