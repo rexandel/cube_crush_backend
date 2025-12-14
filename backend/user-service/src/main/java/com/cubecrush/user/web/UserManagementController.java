@@ -8,18 +8,26 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-@RequestMapping("/api/v1/internal/users")
+@RequestMapping("/api/v1/system/users")
 @RequiredArgsConstructor
-public class InternalUserController {
+public class UserManagementController {
     private final UserService userService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UserProfile createUser(@Valid @RequestBody CreateUserRequest request) {
-        User user = userService.createUser(request.nickname(), request.password());
-        return UserProfile.from(user);
+        try {
+            User user = userService.createUser(request.nickname(), request.password());
+            return UserProfile.from(user);
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().contains("already exists")) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "User already exists", e);
+            }
+            throw e;
+        }
     }
 
     @GetMapping("/{userId}")
