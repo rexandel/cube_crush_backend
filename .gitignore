@@ -48,6 +48,8 @@ Thumbs.db
 logs/
 
 # Database
+.env
+
 *.db
 *.sqlite
 *.h2.db
