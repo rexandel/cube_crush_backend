@@ -1,4 +1,4 @@
-package com.cubecrush.auth.config;
+package com.cubecrush.user.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +21,14 @@ public class SecurityConfig {
                     corsConfiguration.setAllowedHeaders(java.util.List.of("*"));
                     return corsConfiguration;
                 }))
+                .addFilterBefore(new jakarta.servlet.Filter() {
+                    @Override
+                    public void doFilter(jakarta.servlet.ServletRequest request, jakarta.servlet.ServletResponse response, jakarta.servlet.FilterChain chain) throws java.io.IOException, jakarta.servlet.ServletException {
+                        var req = (jakarta.servlet.http.HttpServletRequest) request;
+                        System.out.println("Incoming request: " + req.getMethod() + " " + req.getRequestURI());
+                        chain.doFilter(request, response);
+                    }
+                }, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(authz -> authz
                         .anyRequest().permitAll()
                 )

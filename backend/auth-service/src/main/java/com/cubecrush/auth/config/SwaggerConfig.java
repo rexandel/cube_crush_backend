@@ -22,8 +22,11 @@ public class SwaggerConfig {
                         .version("1.5.0"))
                 .servers(List.of(
                         new Server()
+                                .url("http://localhost:8080/auth-service")
+                                .description("Gateway Server"),
+                        new Server()
                                 .url("http://localhost:8081")
-                                .description("Development Server")
+                                .description("Direct Server")
                 ))
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth", new SecurityScheme()

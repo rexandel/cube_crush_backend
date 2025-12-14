@@ -34,7 +34,11 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
-        if (!validatePassword(currentPassword, user.getPasswordHash())) {
+        log.info("Changing password for user {}. Hash in DB: {}", userId, user.getPasswordHash());
+        boolean matches = validatePassword(currentPassword, user.getPasswordHash());
+        log.info("Password match result: {}", matches);
+
+        if (!matches) {
             throw new IllegalArgumentException("Invalid current password");
         }
 
