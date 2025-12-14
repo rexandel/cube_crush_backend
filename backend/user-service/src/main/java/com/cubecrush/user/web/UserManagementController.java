@@ -4,12 +4,14 @@ import com.cubecrush.user.model.User;
 import com.cubecrush.user.service.UserService;
 import com.cubecrush.user.web.dto.CreateUserRequest;
 import com.cubecrush.user.web.dto.UserProfile;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+@Hidden
 @RestController
 @RequestMapping("/api/v1/system/users")
 @RequiredArgsConstructor
