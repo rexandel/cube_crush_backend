@@ -86,6 +86,25 @@ services:
     networks:
       - cube-crush-network
 
+  game-service:
+    # ports:
+    #   - "8083:8083"
+    build: ./backend/game-service
+    container_name: cube_crush_game
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/cube_crush_game
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=123
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - cube-crush-network
+
 volumes:
   postgres_data:
 
