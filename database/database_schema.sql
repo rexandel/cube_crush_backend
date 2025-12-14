@@ -1,7 +1,3 @@
-CREATE DATABASE cube_crush_game;
-
-\c cube_crush_game;
-
 -- Основные таблицы
 CREATE TABLE IF NOT EXISTS users (
     id BIGSERIAL PRIMARY KEY,
