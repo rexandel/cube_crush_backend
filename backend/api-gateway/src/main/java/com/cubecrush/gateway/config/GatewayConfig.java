@@ -1,6 +1,5 @@
 package com.cubecrush.gateway.config;
 
-import com.cubecrush.gateway.filter.JwtAuthFilter;
 import com.cubecrush.gateway.filter.InternalServiceFilter;
 import com.cubecrush.gateway.filter.RequestLogger;
 import org.springframework.cloud.gateway.route.RouteLocator;
@@ -12,14 +11,11 @@ import org.springframework.http.HttpMethod;
 @Configuration
 public class GatewayConfig {
 
-    private final JwtAuthFilter jwtAuthFilter;
     private final InternalServiceFilter internalServiceFilter;
     private final RequestLogger requestLogger;
 
-    public GatewayConfig(JwtAuthFilter jwtAuthFilter, 
-                         InternalServiceFilter internalServiceFilter,
+    public GatewayConfig(InternalServiceFilter internalServiceFilter,
                          RequestLogger requestLogger) {
-        this.jwtAuthFilter = jwtAuthFilter;
         this.internalServiceFilter = internalServiceFilter;
         this.requestLogger = requestLogger;
     }
@@ -63,7 +59,6 @@ public class GatewayConfig {
                         .and()
                         .method(HttpMethod.POST)
                         .filters(f -> f
-                                .filter(jwtAuthFilter)
                                 .filter(requestLogger)
                                 .filter(internalServiceFilter)
                         )
@@ -74,7 +69,6 @@ public class GatewayConfig {
                         .and()
                         .method(HttpMethod.POST)
                         .filters(f -> f
-                                .filter(jwtAuthFilter)
                                 .filter(requestLogger)
                                 .filter(internalServiceFilter)
                         )
@@ -99,7 +93,6 @@ public class GatewayConfig {
                         .method(HttpMethod.GET, HttpMethod.PUT, HttpMethod.PATCH, HttpMethod.DELETE)
                         .filters(f -> f
                                 .rewritePath("/user-service/(?<segment>.*)", "/${segment}")
-                                .filter(jwtAuthFilter)
                                 .filter(requestLogger)
                                 .filter(internalServiceFilter)
                         )
@@ -120,7 +113,6 @@ public class GatewayConfig {
                         .path("/api/v1/game/**", "/game-service/api/v1/game/**")
                         .filters(f -> f
                                 .rewritePath("/game-service/(?<segment>.*)", "/${segment}")
-                                .filter(jwtAuthFilter)
                                 .filter(requestLogger)
                                 .filter(internalServiceFilter)
                         )
