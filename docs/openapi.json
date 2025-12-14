@@ -54,7 +54,7 @@
             }
           },
           "400": {
-            "description": "Ошибка валидации",
+            "description": "Ошибка валидации (VALIDATION_ERROR)",
             "content": {
               "application/json": {
                 "schema": {
@@ -64,7 +64,17 @@
             }
           },
           "409": {
-            "description": "Пользователь с таким именем уже существует",
+            "description": "Пользователь с таким именем уже существует (NICKNAME_ALREADY_TAKEN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера (INTERNAL_SERVER_ERROR, AUTH_REGISTRATION_FAILED)",
             "content": {
               "application/json": {
                 "schema": {
@@ -104,7 +114,17 @@
             }
           },
           "401": {
-            "description": "Неверные учетные данные",
+            "description": "Неверные учетные данные (AUTH_INVALID_CREDENTIALS)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера (INTERNAL_SERVER_ERROR, AUTH_LOGIN_FAILED)",
             "content": {
               "application/json": {
                 "schema": {
@@ -132,7 +152,7 @@
             "description": "Успешный выход"
           },
           "401": {
-            "description": "Неавторизован",
+            "description": "Неавторизован (AUTH_INVALID_HEADER)",
             "content": {
               "application/json": {
                 "schema": {
@@ -172,7 +192,17 @@
             }
           },
           "401": {
-            "description": "Неверный или просроченный refresh token",
+            "description": "Неверный или просроченный refresh token (AUTH_INVALID_TOKEN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера (INTERNAL_SERVER_ERROR, AUTH_REFRESH_FAILED)",
             "content": {
               "application/json": {
                 "schema": {
@@ -209,6 +239,27 @@
         }
       }
     },
+    "/auth/health": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Проверка работоспособности сервиса",
+        "responses": {
+          "200": {
+            "description": "Сервис работает",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "example": "Auth Service is UP!"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users/me": {
       "get": {
         "tags": [
@@ -232,7 +283,17 @@
             }
           },
           "401": {
-            "description": "Неавторизован",
+            "description": "Неавторизован (USER_NOT_FOUND)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера (INTERNAL_SERVER_ERROR)",
             "content": {
               "application/json": {
                 "schema": {
@@ -277,7 +338,17 @@
             }
           },
           "409": {
-            "description": "Имя пользователя уже занято",
+            "description": "Имя пользователя уже занято (NICKNAME_ALREADY_TAKEN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера (INTERNAL_SERVER_ERROR)",
             "content": {
               "application/json": {
                 "schema": {
@@ -315,7 +386,17 @@
             "description": "Пароль успешно изменен"
           },
           "400": {
-            "description": "Неверный текущий пароль",
+            "description": "Неверный текущий пароль (USER_INVALID_PASSWORD)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера (INTERNAL_SERVER_ERROR)",
             "content": {
               "application/json": {
                 "schema": {
@@ -358,6 +439,26 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Ошибка валидации (GAME_INVALID_SCORE, VALIDATION_ERROR)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера (INTERNAL_SERVER_ERROR)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -378,6 +479,16 @@
                   "items": {
                     "$ref": "#/components/schemas/TopPlayer"
                   }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера (INTERNAL_SERVER_ERROR)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -406,6 +517,16 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера (INTERNAL_SERVER_ERROR)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -431,6 +552,16 @@
                   "items": {
                     "$ref": "#/components/schemas/Score"
                   }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Внутренняя ошибка сервера (INTERNAL_SERVER_ERROR)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -699,7 +830,7 @@
           },
           "localizationKey": {
             "type": "string",
-            "description": "Optional key for frontend localization"
+            "description": "Key for frontend localization. Common values: VALIDATION_ERROR, INVALID_REQUEST, INTERNAL_SERVER_ERROR. Specific: NICKNAME_ALREADY_TAKEN, AUTH_INVALID_CREDENTIALS, AUTH_INVALID_TOKEN, USER_NOT_FOUND, USER_INVALID_PASSWORD, GAME_INVALID_SCORE"
           }
         }
       }
