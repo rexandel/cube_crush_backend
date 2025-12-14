@@ -17,13 +17,13 @@ public class SwaggerConfig {
     public OpenAPI cubeCrushOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("Cube Crush API")
-                        .description("API для мобильной игры Cube Crush")
+                        .title("Auth Service API")
+                        .description("Auth service for Cube Crush")
                         .version("1.5.0"))
                 .servers(List.of(
                         new Server()
                                 .url("http://localhost:8081")
-                                .description("Сервер разработки")
+                                .description("Development Server")
                 ))
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth", new SecurityScheme()

@@ -22,8 +22,15 @@ public class TokenService {
     private final RevokedTokenRepository revokedTokenRepository;
 
     @Transactional
-    public UserSession createSession(Long userId, String userNickname, String jti, String accessTokenHash, String refreshTokenHash,
+    public UserSession createSession(Long userId, String userNickname, String jti,
+                                     String accessTokenHash, String refreshTokenHash,
                                      Instant accessTokenExpiresAt, Instant refreshTokenExpiresAt) {
+
+        if (userSessionRepository.existsByJti(jti)) {
+            log.warn("Session with jti: {} already exists, recreating", jti);
+            revokeSession(jti);
+        }
+
         UserSession session = UserSession.builder()
                 .userId(userId)
                 .userNickname(userNickname)
@@ -33,6 +40,7 @@ public class TokenService {
                 .accessTokenExpiresAt(accessTokenExpiresAt)
                 .refreshTokenExpiresAt(refreshTokenExpiresAt)
                 .isRevoked(false)
+                .createdAt(Instant.now())
                 .build();
 
         UserSession savedSession = userSessionRepository.save(session);
@@ -41,47 +49,50 @@ public class TokenService {
     }
 
     public Optional<UserSession> findValidSessionByRefreshToken(String refreshTokenHash) {
-        return userSessionRepository.findByRefreshTokenHash(refreshTokenHash)
-                .filter(session -> !session.getIsRevoked())
-                .filter(session -> session.getRefreshTokenExpiresAt().isAfter(Instant.now()));
+        return userSessionRepository.findByRefreshTokenHashAndIsRevokedFalseAndRefreshTokenExpiresAtAfter(
+                refreshTokenHash, Instant.now());
     }
 
     public Optional<UserSession> findValidSessionByAccessToken(String accessTokenHash) {
-        return userSessionRepository.findByAccessTokenHash(accessTokenHash)
-                .filter(session -> !session.getIsRevoked())
-                .filter(session -> session.getAccessTokenExpiresAt().isAfter(Instant.now()));
+        return userSessionRepository.findByAccessTokenHashAndIsRevokedFalseAndAccessTokenExpiresAtAfter(
+                accessTokenHash, Instant.now());
     }
 
     public Optional<UserSession> findValidSessionByJti(String jti) {
-        return userSessionRepository.findByJti(jti)
-                .filter(session -> !session.getIsRevoked())
-                .filter(session -> session.getRefreshTokenExpiresAt().isAfter(Instant.now()));
+        return userSessionRepository.findByJtiAndIsRevokedFalseAndRefreshTokenExpiresAtAfter(
+                jti, Instant.now());
     }
 
     @Transactional
     public void revokeSession(String jti) {
-        userSessionRepository.findByJti(jti).ifPresent(session -> {
-            session.setIsRevoked(true);
-            userSessionRepository.save(session);
+        int updatedCount = userSessionRepository.revokeSessionByJti(jti);
+        if (updatedCount > 0) {
             log.info("Revoked session with jti: {}", jti);
-        });
+        } else {
+            log.debug("Session with jti: {} not found or already revoked", jti);
+        }
     }
 
     @Transactional
     public void revokeAllUserSessions(Long userId) {
-        userSessionRepository.revokeAllUserSessions(userId);
-        log.info("Revoked all sessions for user id: {}", userId);
+        int revokedCount = userSessionRepository.revokeAllUserSessions(userId);
+        log.info("Revoked {} sessions for user id: {}", revokedCount, userId);
     }
 
     @Transactional
     public void revokeToken(String jti, Instant expiresAt) {
-        RevokedToken revokedToken = RevokedToken.builder()
-                .jti(jti)
-                .expiresAt(expiresAt)
-                .build();
+        if (!revokedTokenRepository.existsByJti(jti)) {
+            RevokedToken revokedToken = RevokedToken.builder()
+                    .jti(jti)
+                    .expiresAt(expiresAt)
+                    .revokedAt(Instant.now())
+                    .build();
 
-        revokedTokenRepository.save(revokedToken);
-        log.info("Added token to blacklist, jti: {}", jti);
+            revokedTokenRepository.save(revokedToken);
+            log.info("Added token to blacklist, jti: {}", jti);
+        } else {
+            log.debug("Token with jti: {} already in blacklist", jti);
+        }
     }
 
     public boolean isTokenRevoked(String jti) {
@@ -93,19 +104,46 @@ public class TokenService {
                 userId, Instant.now());
     }
 
-    public List<UserSession> findSessionsWithExpiringAccessTokens(Long userId) {
-        return userSessionRepository.findByUserIdAndIsRevokedFalseAndAccessTokenExpiresAtAfter(
-                userId, Instant.now());
+    public List<UserSession> findExpiringSessions(int hoursBeforeExpiration) {
+        Instant threshold = Instant.now().plusSeconds(hoursBeforeExpiration * 3600L);
+        return userSessionRepository.findByRefreshTokenExpiresAtBeforeAndIsRevokedFalse(threshold);
     }
 
-    @Scheduled(cron = "0 0 3 * * ?")
+    public boolean isValidSession(String jti) {
+        if (isTokenRevoked(jti)) {
+            return false;
+        }
+        return findValidSessionByJti(jti).isPresent();
+    }
+
+    @Scheduled(cron = "0 0 */6 * * ?")
     @Transactional
     public void cleanupExpiredData() {
         Instant now = Instant.now();
 
-        userSessionRepository.deleteExpiredSessions(now);
-        revokedTokenRepository.deleteExpiredTokens(now);
+        int sessionsDeleted = userSessionRepository.deleteExpiredSessions(now);
+        int tokensDeleted = revokedTokenRepository.deleteExpiredTokens(now);
 
-        log.info("Cleaned up expired sessions and revoked tokens");
+        log.info("Cleaned up {} expired sessions and {} revoked tokens",
+                sessionsDeleted, tokensDeleted);
     }
+
+    @Scheduled(cron = "0 0 2 * * ?")
+    @Transactional
+    public void cleanupOldRevokedTokens() {
+        Instant oldThreshold = Instant.now().minusSeconds(7 * 24 * 3600L); // 7 дней назад
+        int deletedCount = revokedTokenRepository.deleteByRevokedAtBefore(oldThreshold);
+        log.info("Cleaned up {} old revoked tokens", deletedCount);
+    }
+
+    public SessionStats getSessionStats() {
+        Instant now = Instant.now();
+        long activeSessions = userSessionRepository.countByIsRevokedFalseAndRefreshTokenExpiresAtAfter(now);
+        long revokedSessions = userSessionRepository.countByIsRevokedTrue();
+        long expiredSessions = userSessionRepository.countByRefreshTokenExpiresAtBefore(now);
+
+        return new SessionStats(activeSessions, revokedSessions, expiredSessions);
+    }
+
+    public record SessionStats(long activeSessions, long revokedSessions, long expiredSessions) {}
 }

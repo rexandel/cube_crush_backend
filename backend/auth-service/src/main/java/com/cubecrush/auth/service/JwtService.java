@@ -2,7 +2,8 @@ package com.cubecrush.auth.service;
 
 import com.cubecrush.auth.model.UserSession;
 import com.cubecrush.auth.repository.UserSessionRepository;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,9 +25,7 @@ import java.util.UUID;
 public class JwtService {
     private final UserSessionRepository userSessionRepository;
 
-    public JwtService(UserSessionRepository userSessionRepository) {
-        this.userSessionRepository = userSessionRepository;
-    }
+    private SecretKey signingKey;
 
     @Value("${jwt.secret:mySuperSecretKeyForCubeCrushGameThatShouldBeVeryLongAndSecure}")
     private String jwtSecret;
@@ -37,11 +36,17 @@ public class JwtService {
     @Value("${jwt.expiration.refresh:604800}")
     private long refreshTokenExpirationSeconds;
 
-    private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+    public JwtService(UserSessionRepository userSessionRepository) {
+        this.userSessionRepository = userSessionRepository;
     }
 
-    // ОБНОВЛЕННЫЕ МЕТОДЫ - принимают userId и nickname вместо User
+    private SecretKey getSigningKey() {
+        if (signingKey == null) {
+            signingKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        }
+        return signingKey;
+    }
+
     public String generateAccessToken(Long userId, String nickname) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
@@ -87,31 +92,31 @@ public class JwtService {
     }
 
     public String getUsernameFromToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+        return getClaimsFromToken(token).getSubject();
+    }
+
+    public Long getUserIdFromToken(String token) {
+        return getClaimsFromToken(token).get("userId", Long.class);
     }
 
     public String getJtiFromToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getId();
+        return getClaimsFromToken(token).getId();
     }
 
     public Instant getExpirationFromToken(String token) {
+        return getClaimsFromToken(token).getExpiration().toInstant();
+    }
+
+    public String getTokenTypeFromToken(String token) {
+        return getClaimsFromToken(token).get("type", String.class);
+    }
+
+    private Claims getClaimsFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
-                .getBody()
-                .getExpiration()
-                .toInstant();
+                .getBody();
     }
 
     public Instant getExpirationFromJti(String jti) {
@@ -144,7 +149,7 @@ public class JwtService {
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
             log.error("SHA-256 algorithm not available", e);
-            return Integer.toHexString(token.hashCode());
+            throw new RuntimeException("SHA-256 algorithm not available", e);
         }
     }
 
@@ -156,12 +161,13 @@ public class JwtService {
         return Instant.now().plusSeconds(refreshTokenExpirationSeconds);
     }
 
-    public Long getUserIdFromToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .get("userId", Long.class);
+    public boolean isTokenValid(String token) {
+        try {
+            return validateToken(token) &&
+                    "access".equals(getTokenTypeFromToken(token)) &&
+                    getExpirationFromToken(token).isAfter(Instant.now());
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

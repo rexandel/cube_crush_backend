@@ -8,15 +8,21 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
-import java.util.Optional;
+import java.util.List;
 
 @Repository
-public interface RevokedTokenRepository extends JpaRepository<RevokedToken, String> {
+public interface RevokedTokenRepository extends JpaRepository<RevokedToken, Long> {
+
     boolean existsByJti(String jti);
 
     @Modifying
     @Query("DELETE FROM RevokedToken rt WHERE rt.expiresAt < :now")
-    void deleteExpiredTokens(@Param("now") Instant now);
+    int deleteExpiredTokens(@Param("now") Instant now);
 
-    Optional<RevokedToken> findByJti(String jti);
+    @Modifying
+    @Query("DELETE FROM RevokedToken rt WHERE rt.revokedAt < :threshold")
+    int deleteByRevokedAtBefore(@Param("threshold") Instant threshold);
+
+    @Query("SELECT COUNT(rt) FROM RevokedToken rt WHERE rt.expiresAt > :now")
+    long countActiveRevokedTokens(@Param("now") Instant now);
 }
